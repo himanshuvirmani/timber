@@ -1,6 +1,5 @@
 package timber.log;
 
-import android.util.Log;
 import android.util.SparseBooleanArray;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -8,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /** Logging for lazy people. */
-public final class Timber {
+public final class Log {
   /** Log a verbose message with optional format args. */
   public static void v(String message, Object... args) {
     TREE_OF_SOULS.v(message, args);
@@ -193,7 +192,7 @@ public final class Timber {
     }
   };
 
-  private Timber() {
+  private Log() {
     throw new AssertionError("No instances.");
   }
 
@@ -295,43 +294,43 @@ public final class Timber {
     }
 
     @Override public final void v(String message, Object... args) {
-      throwShade(Log.VERBOSE, maybeFormat(message, args), null);
+      throwShade(android.util.Log.VERBOSE, maybeFormat(message, args), null);
     }
 
     @Override public final void v(Throwable t, String message, Object... args) {
-      throwShade(Log.VERBOSE, maybeFormat(message, args), t);
+      throwShade(android.util.Log.VERBOSE, maybeFormat(message, args), t);
     }
 
     @Override public final void d(String message, Object... args) {
-      throwShade(Log.DEBUG, maybeFormat(message, args), null);
+      throwShade(android.util.Log.DEBUG, maybeFormat(message, args), null);
     }
 
     @Override public final void d(Throwable t, String message, Object... args) {
-      throwShade(Log.DEBUG, maybeFormat(message, args), t);
+      throwShade(android.util.Log.DEBUG, maybeFormat(message, args), t);
     }
 
     @Override public final void i(String message, Object... args) {
-      throwShade(Log.INFO, maybeFormat(message, args), null);
+      throwShade(android.util.Log.INFO, maybeFormat(message, args), null);
     }
 
     @Override public final void i(Throwable t, String message, Object... args) {
-      throwShade(Log.INFO, maybeFormat(message, args), t);
+      throwShade(android.util.Log.INFO, maybeFormat(message, args), t);
     }
 
     @Override public final void w(String message, Object... args) {
-      throwShade(Log.WARN, maybeFormat(message, args), null);
+      throwShade(android.util.Log.WARN, maybeFormat(message, args), null);
     }
 
     @Override public final void w(Throwable t, String message, Object... args) {
-      throwShade(Log.WARN, maybeFormat(message, args), t);
+      throwShade(android.util.Log.WARN, maybeFormat(message, args), t);
     }
 
     @Override public final void e(String message, Object... args) {
-      throwShade(Log.ERROR, maybeFormat(message, args), null);
+      throwShade(android.util.Log.ERROR, maybeFormat(message, args), null);
     }
 
     @Override public final void e(Throwable t, String message, Object... args) {
-      throwShade(Log.ERROR, maybeFormat(message, args), t);
+      throwShade(android.util.Log.ERROR, maybeFormat(message, args), t);
     }
 
     private void throwShade(int priority, String message, Throwable t) {
@@ -339,9 +338,9 @@ public final class Timber {
         if (t == null) {
           return; // Swallow message if it's null and there's no throwable.
         }
-        message = Log.getStackTraceString(t);
+        message = android.util.Log.getStackTraceString(t);
       } else if (t != null) {
-        message += "\n" + Log.getStackTraceString(t);
+        message += "\n" + android.util.Log.getStackTraceString(t);
       }
 
       String tag = createTag();
@@ -351,7 +350,7 @@ public final class Timber {
     /** Log a message! */
     protected void logMessage(int priority, String tag, String message) {
       if (message.length() < MAX_LOG_LENGTH) {
-        Log.println(priority, tag, message);
+         android.util.Log.println(priority, tag, message);
         return;
       }
 
@@ -361,7 +360,7 @@ public final class Timber {
         newline = newline != -1 ? newline : length;
         do {
           int end = Math.min(newline, i + MAX_LOG_LENGTH);
-          Log.println(priority, tag, message.substring(i, end));
+           android.util.Log.println(priority, tag, message.substring(i, end));
           i = end;
         } while (i < newline);
       }
