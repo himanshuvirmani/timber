@@ -59,6 +59,14 @@ public final class Timber {
     TREE_OF_SOULS.e(t, message, args);
   }
 
+  /**
+   * A view into Timber's planted trees as a tree itself. This can be used for injecting a logger
+   * instance rather than using static methods or to facilitate testing.
+   */
+  public static Tree asTree() {
+    return TREE_OF_SOULS;
+  }
+
   /** Set a one-time tag for use on the next logging call. */
   public static Tree tag(String tag) {
     for (int index = 0, size = TAGGED_TREES.size(); index < size; index++) {
@@ -69,10 +77,34 @@ public final class Timber {
 
   /** Add a new logging tree. */
   public static void plant(Tree tree) {
+    if (tree == null) {
+      throw new NullPointerException("tree == null");
+    }
+    if (tree == TREE_OF_SOULS) {
+      throw new IllegalArgumentException("Cannot plant Timber into itself.");
+    }
     if (tree instanceof TaggedTree) {
       TAGGED_TREES.append(FOREST.size(), true);
     }
     FOREST.add(tree);
+  }
+
+  /** Remove a planted tree. */
+  public static void uproot(Tree tree) {
+    for (int i = 0, size = FOREST.size(); i < size; i++) {
+      if (FOREST.get(i) == tree) {
+        TAGGED_TREES.delete(i);
+        FOREST.remove(i);
+        return;
+      }
+    }
+    throw new IllegalArgumentException("Cannot uproot tree which is not planted: " + tree);
+  }
+
+  /** Remove all planted trees. */
+  public static void uprootAll() {
+    TAGGED_TREES.clear();
+    FOREST.clear();
   }
 
   static final List<Tree> FOREST = new CopyOnWriteArrayList<Tree>();
@@ -81,67 +113,88 @@ public final class Timber {
   /** A {@link Tree} that delegates to all planted trees in the {@link #FOREST forest}. */
   private static final Tree TREE_OF_SOULS = new Tree() {
     @Override public void v(String message, Object... args) {
-      for (Tree tree : FOREST) {
-        tree.v(message, args);
+      List<Tree> forest = FOREST;
+      //noinspection ForLoopReplaceableByForEach
+      for (int i = 0, count = forest.size(); i < count; i++) {
+        forest.get(i).v(message, args);
       }
     }
 
     @Override public void v(Throwable t, String message, Object... args) {
-      for (Tree tree : FOREST) {
-        tree.v(t, message, args);
+      List<Tree> forest = FOREST;
+      //noinspection ForLoopReplaceableByForEach
+      for (int i = 0, count = forest.size(); i < count; i++) {
+        forest.get(i).v(t, message, args);
       }
     }
 
     @Override public void d(String message, Object... args) {
-      for (Tree tree : FOREST) {
-        tree.d(message, args);
+      List<Tree> forest = FOREST;
+      //noinspection ForLoopReplaceableByForEach
+      for (int i = 0, count = forest.size(); i < count; i++) {
+        forest.get(i).d(message, args);
       }
     }
 
     @Override public void d(Throwable t, String message, Object... args) {
-      for (Tree tree : FOREST) {
-        tree.d(t, message, args);
+      List<Tree> forest = FOREST;
+      //noinspection ForLoopReplaceableByForEach
+      for (int i = 0, count = forest.size(); i < count; i++) {
+        forest.get(i).d(t, message, args);
       }
     }
 
     @Override public void i(String message, Object... args) {
-      for (Tree tree : FOREST) {
-        tree.i(message, args);
+      List<Tree> forest = FOREST;
+      //noinspection ForLoopReplaceableByForEach
+      for (int i = 0, count = forest.size(); i < count; i++) {
+        forest.get(i).i(message, args);
       }
     }
 
     @Override public void i(Throwable t, String message, Object... args) {
-      for (Tree tree : FOREST) {
-        tree.i(t, message, args);
+      List<Tree> forest = FOREST;
+      //noinspection ForLoopReplaceableByForEach
+      for (int i = 0, count = forest.size(); i < count; i++) {
+        forest.get(i).i(t, message, args);
       }
     }
 
     @Override public void w(String message, Object... args) {
-      for (Tree tree : FOREST) {
-        tree.w(message, args);
+      List<Tree> forest = FOREST;
+      //noinspection ForLoopReplaceableByForEach
+      for (int i = 0, count = forest.size(); i < count; i++) {
+        forest.get(i).w(message, args);
       }
     }
 
     @Override public void w(Throwable t, String message, Object... args) {
-      for (Tree tree : FOREST) {
-        tree.w(t, message, args);
+      List<Tree> forest = FOREST;
+      //noinspection ForLoopReplaceableByForEach
+      for (int i = 0, count = forest.size(); i < count; i++) {
+        forest.get(i).w(t, message, args);
       }
     }
 
     @Override public void e(String message, Object... args) {
-      for (Tree tree : FOREST) {
-        tree.e(message, args);
+      List<Tree> forest = FOREST;
+      //noinspection ForLoopReplaceableByForEach
+      for (int i = 0, count = forest.size(); i < count; i++) {
+        forest.get(i).e(message, args);
       }
     }
 
     @Override public void e(Throwable t, String message, Object... args) {
-      for (Tree tree : FOREST) {
-        tree.e(t, message, args);
+      List<Tree> forest = FOREST;
+      //noinspection ForLoopReplaceableByForEach
+      for (int i = 0, count = forest.size(); i < count; i++) {
+        forest.get(i).e(t, message, args);
       }
     }
   };
 
   private Timber() {
+    throw new AssertionError("No instances.");
   }
 
   /** A facade for handling logging calls. Install instances via {@link #plant}. */
@@ -185,17 +238,50 @@ public final class Timber {
 
   /** A {@link Tree} for debug builds. Automatically infers the tag from the calling class. */
   public static class DebugTree implements TaggedTree {
+    private static final int MAX_LOG_LENGTH = 4000;
     private static final Pattern ANONYMOUS_CLASS = Pattern.compile("\\$\\d+$");
     private static final ThreadLocal<String> NEXT_TAG = new ThreadLocal<String>();
 
-    private static String createTag() {
+    @Override public final void tag(String tag) {
+      NEXT_TAG.set(tag);
+    }
+
+    /**
+     * Returns an explicitly set tag for the next log message or {@code null}. Calling this method
+     * clears any set tag so it may only be called once.
+     */
+    protected final String nextTag() {
       String tag = NEXT_TAG.get();
       if (tag != null) {
         NEXT_TAG.remove();
+      }
+      return tag;
+    }
+
+    /**
+     * Creates a tag for a log message.
+     * <p>
+     * By default this method will check {@link #nextTag()} for an explicit tag. If there is no
+     * explicit tag, the class name of the caller will be used by inspecting the stack trace of the
+     * current thread.
+     * <p>
+     * Note: Do not call {@code super.createTag()} if you override this method. It will produce
+     * incorrect results.
+     */
+    protected String createTag() {
+      String tag = nextTag();
+      if (tag != null) {
         return tag;
       }
 
-      tag = new Throwable().getStackTrace()[4].getClassName();
+      // DO NOT switch this to Thread.getCurrentThread().getStackTrace(). The test will pass
+      // because Robolectric runs them on the JVM but on Android the elements are different.
+      StackTraceElement[] stackTrace = new Throwable().getStackTrace();
+      if (stackTrace.length < 6) {
+        throw new IllegalStateException(
+            "Synthetic stacktrace didn't have enough elements: are you using proguard?");
+      }
+      tag = stackTrace[5].getClassName();
       Matcher m = ANONYMOUS_CLASS.matcher(tag);
       if (m.find()) {
         tag = m.replaceAll("");
@@ -203,53 +289,82 @@ public final class Timber {
       return tag.substring(tag.lastIndexOf('.') + 1);
     }
 
-    static String formatString(String message, Object... args) {
+    private static String maybeFormat(String message, Object... args) {
       // If no varargs are supplied, treat it as a request to log the string without formatting.
       return args.length == 0 ? message : String.format(message, args);
     }
 
-    @Override public void v(String message, Object... args) {
-      Log.v(createTag(), formatString(message, args));
+    @Override public final void v(String message, Object... args) {
+      throwShade(Log.VERBOSE, maybeFormat(message, args), null);
     }
 
-    @Override public void v(Throwable t, String message, Object... args) {
-      Log.v(createTag(), formatString(message, args), t);
+    @Override public final void v(Throwable t, String message, Object... args) {
+      throwShade(Log.VERBOSE, maybeFormat(message, args), t);
     }
 
-    @Override public void d(String message, Object... args) {
-      Log.d(createTag(), formatString(message, args));
+    @Override public final void d(String message, Object... args) {
+      throwShade(Log.DEBUG, maybeFormat(message, args), null);
     }
 
-    @Override public void d(Throwable t, String message, Object... args) {
-      Log.d(createTag(), formatString(message, args), t);
+    @Override public final void d(Throwable t, String message, Object... args) {
+      throwShade(Log.DEBUG, maybeFormat(message, args), t);
     }
 
-    @Override public void i(String message, Object... args) {
-      Log.i(createTag(), formatString(message, args));
+    @Override public final void i(String message, Object... args) {
+      throwShade(Log.INFO, maybeFormat(message, args), null);
     }
 
-    @Override public void i(Throwable t, String message, Object... args) {
-      Log.i(createTag(), formatString(message, args), t);
+    @Override public final void i(Throwable t, String message, Object... args) {
+      throwShade(Log.INFO, maybeFormat(message, args), t);
     }
 
-    @Override public void w(String message, Object... args) {
-      Log.w(createTag(), formatString(message, args));
+    @Override public final void w(String message, Object... args) {
+      throwShade(Log.WARN, maybeFormat(message, args), null);
     }
 
-    @Override public void w(Throwable t, String message, Object... args) {
-      Log.w(createTag(), formatString(message, args), t);
+    @Override public final void w(Throwable t, String message, Object... args) {
+      throwShade(Log.WARN, maybeFormat(message, args), t);
     }
 
-    @Override public void e(String message, Object... args) {
-      Log.e(createTag(), formatString(message, args));
+    @Override public final void e(String message, Object... args) {
+      throwShade(Log.ERROR, maybeFormat(message, args), null);
     }
 
-    @Override public void e(Throwable t, String message, Object... args) {
-      Log.e(createTag(), formatString(message, args), t);
+    @Override public final void e(Throwable t, String message, Object... args) {
+      throwShade(Log.ERROR, maybeFormat(message, args), t);
     }
 
-    @Override public void tag(String tag) {
-      NEXT_TAG.set(tag);
+    private void throwShade(int priority, String message, Throwable t) {
+      if (message == null || message.length() == 0) {
+        if (t == null) {
+          return; // Swallow message if it's null and there's no throwable.
+        }
+        message = Log.getStackTraceString(t);
+      } else if (t != null) {
+        message += "\n" + Log.getStackTraceString(t);
+      }
+
+      String tag = createTag();
+      logMessage(priority, tag, message);
+    }
+
+    /** Log a message! */
+    protected void logMessage(int priority, String tag, String message) {
+      if (message.length() < MAX_LOG_LENGTH) {
+        Log.println(priority, tag, message);
+        return;
+      }
+
+      // Split by line, then ensure each line can fit into Log's maximum length.
+      for (int i = 0, length = message.length(); i < length; i++) {
+        int newline = message.indexOf('\n', i);
+        newline = newline != -1 ? newline : length;
+        do {
+          int end = Math.min(newline, i + MAX_LOG_LENGTH);
+          Log.println(priority, tag, message.substring(i, end));
+          i = end;
+        } while (i < newline);
+      }
     }
   }
 

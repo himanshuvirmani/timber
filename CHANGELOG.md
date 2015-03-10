@@ -1,6 +1,64 @@
 Change Log
 ==========
 
+Version 2.7.1 *(2015-02-17)*
+----------------------------
+
+ * Fix: Switch method of getting calling class to be consistent across API levels.
+
+
+Version 2.7.0 *(2015-02-17)*
+----------------------------
+
+ * New: `DebugTree` subclasses can now override `logMessage` for access to the priority, tag, and
+   entire message for every log.
+ * Fix: Prevent overriding `Tree` and `TaggedTree` methods on `DebugTree`.
+
+
+Version 2.6.0 *(2015-02-17)*
+----------------------------
+
+ * New: `DebugTree` subclasses can now override `createTag()` to specify log tags. `nextTag()` is
+   also accessible for querying if an explicit tag was set.
+
+
+Version 2.5.1 *(2015-01-19)*
+----------------------------
+
+ * Fix: Properly split lines which contain both newlines and are over 4000 characters.
+ * Explicitly forbid `null` tree instances.
+
+
+Version 2.5.0 *(2014-11-08)*
+----------------------------
+
+ * New: `Timber.asTree()` exposes functionality as a `Tree` instance rather than static methods.
+
+
+Version 2.4.2 *(2014-11-07)*
+----------------------------
+
+ * Eliminate heap allocation when dispatching log calls.
+
+
+Version 2.4.1 *(2014-06-19)*
+----------------------------
+
+ * Fix: Calls with no message but a `Throwable` are now correctly logged.
+
+
+Version 2.4.0 *(2014-06-10)*
+----------------------------
+
+ * New: `uproot` and `uprootAll` methods allow removing trees.
+
+
+Version 2.3.0 *(2014-05-21)*
+----------------------------
+
+ * New: Messages longer than 4000 characters will be split into multiple lines.
+
+
 Version 2.2.2 *(2014-02-12)*
 ----------------------------
 
